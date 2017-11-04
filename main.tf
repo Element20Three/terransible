@@ -161,4 +161,40 @@ resource "aws_security_group" "public" {
     }
 }
 
+#Private Security Group
 
+resource "aws_security_group" "private" {
+  name		= "sg_private"
+  description	= "Used for private instances"
+  vpc_id	= "${aws_vpc.vpc.id}"
+
+#Access from other security groups
+
+  ingress {
+    from_port	= 0
+    to_port	= 0 
+    protocol	= "-1"
+    cidr_blocks	= ["10.1.0.0/16"]
+  }
+
+  engress {
+    from_port	= 0
+    to_port	= 0
+    protocol	= 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+#RDS Security Group
+resource "aws_security_group" "RDS" {
+  name= "sg_rds"
+  description 	= "Used for DB instances"
+  vpc_id	= "${aws_vpc.vpc.id}"
+
+#SQL Access from public/private security group
+
+ingress {
+    from_port		= 3306
+    to_port		= 3306
+    protocol		= "tcp"
+    security_group 	= ["${aws_security_group.public.id}", "${aws_security_group.private.id}"]
