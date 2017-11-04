@@ -6,6 +6,30 @@ provider "aws" {
 #IAM
 S3_access
 
+resource "aws_iam_instance_profile" "s3_access" {
+    name = "s3_access"
+    roles = ["${aws_iam_role.s3_access.name}"]
+}
+
+resource "aws_iam_role_policy" "s3_access_policy" {
+    name = "s3_access_policy"
+    role = "${aws_iam_role.s3_access.id}"
+    policy = <<EOF
+{
+  "Version": "2012-10-17"
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:*",
+      "Resource": "*"
+     }
+   ]
+}
+EOF
+}
+
+
+
 #VPC
 
 resource "aws_vpc" "vpc" {
