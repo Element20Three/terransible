@@ -36,7 +36,7 @@ resource "aws_vpc" "vpc" {
   cidr_block = "10.1.0.0/16"
 }
 
-resource "aws_insternet_gatewat" "internet_gateway" {
+resource "aws_internet_gateway" "internet_gateway" {
   vpc_id = "${aws_vpc.vpc.id}"
 }
 
@@ -244,4 +244,51 @@ resource "aws_key_pair" "auth" {
   public_key = "${file(var.public_key_path)}"
 }
 
+# Load Balancer
+resource "aws_elb "prod"
+  name = "${var.domain_name}-prod-elb"
+  subnets = ["${aws_subnet.private1.id}", "${aws_subnet.private2.id}"]
+  security_groups = ["$aws_security_group.public.id}"]
+  listener {
+    instance_port = 80
+    instance_protocol = "http"
+    lb_port = 80
+    lb_protocol = "http"
+  }
 
+  health_check {
+    healthy_threshold = "${var.elb_healthy_threshold}"
+    unhealthy_threshold = "${var.elb_unhealthy_threshold}"
+    timeout = "${var.elb_timeout}"
+    target = "HTTP:80/"
+    interval = "${var.elb_interval}"
+  }
+
+  cross_zone_load_balancing = true
+  idle_timeout = 400
+  connection_draining = true
+  connection_draining_timeout = 400
+
+  tags {
+    Name = "${var.domain_name}-prod-elb"
+  }
+}
+  
+#AMI
+
+resource "random_id" "ami" {
+  byte_length = 8 
+}
+
+resource "aws_ami_from_instance" "golden" {
+    name = "ami-${random_id.ami.b64}"
+    source_instance_id = "${aws_instance.dev.id}"
+    provisioner "local-exec" {
+       command = "cat <<EOF > userdata
+#!/bin/bash
+/usr/bin/aws s3 sync s3://${aws_s3_bucket.code.bucket} /var/www/html/
+/bin/touch /var/spool/cron/root
+sudo /bin/echo '*/5 * * * * aws s3 sync: s3//${aws_s3_bucket.code.bucket} /var/www/html/' >> /var/spool/cron/root
+EOF"
+  }
+}

@@ -8,3 +8,9 @@ variable "dbpassword" {}
 variable "key_name" {}
 variable "public_key_path" {}
 variable "domain_name" {}
+variable "dev_instance_type" {}
+variable "dev_ami" {}
+variable "elb_healthy_threshold" {}
+variable "elb_unhealthy_threshold" {}
+variable "elb_timeout" {}
+variable "elb_interval" {}
